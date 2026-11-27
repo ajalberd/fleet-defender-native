@@ -1,0 +1,14 @@
+@echo off
+REM ============================================================================
+REM Fleet Defender Gold (F-14 Tomcat) — Native Host Launcher
+REM ============================================================================
+REM 1. Rename this file from "launch_f14.bat.example" to "launch_f14.bat"
+REM 2. Update GAME_DIR to your GOG Fleet Defender Gold install folder
+REM 3. Update ROM_DIR  to your Roland CM-32L / MT-32 ROM folder
+REM 4. Double-click launch_f14.bat to fly!
+REM ============================================================================
+
+set "GAME_DIR=C:\GOG Games\Fleet Defender Gold"
+set "ROM_DIR=C:\Path\To\Munt_ROMS\cm32l"
+
+start "" "%~dp0f14_native.exe" --game-dir "%GAME_DIR%" --rom-dir "%ROM_DIR%"
