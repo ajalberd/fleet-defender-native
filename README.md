@@ -16,9 +16,9 @@ A standalone C++20 native host (SDL3 + OpenGL + Dear ImGui + Munt `libmt32emu` +
 
 ## Highlights
 
-- **1-Click Native Windows Installer & Startup GUI Launcher:**
-  - Single-file self-extracting setup (`FleetDefenderGold-Native-Setup-v0.1.0.exe`) with automatic GOG / Steam / Retail detection, optional Roland ROM folder detection, Desktop shortcut, safe backup (`_f14_native_backup\`), and clean uninstall (`/S` and `/U` silent CLI modes also supported).
-  - Built-in **Startup GUI Launcher** with launch cards for `F14.COM` (Main Game), `F14S.EXE` (Scenario Builder), `F14.EXE` (Direct Flight), and `F14JUKE.EXE` (Music Jukebox), auto-discovered local PDF manuals, quick settings synced with `f14_settings.json`, and an interactive vector Quickstart Keyboard panel.
+- **1-Click Native Windows Installer & Full Tabbed GUI Launcher:**
+  - Single-file self-extracting setup (`FleetDefenderGold-Native-Setup-v0.2.0.exe`) with automatic GOG / Steam / Retail detection, optional Roland ROM folder detection, Desktop shortcut, safe backup (`_f14_native_backup\`), and clean uninstall (`/S` and `/U` silent CLI modes also supported).
+  - Built-in **Tabbed Startup GUI Launcher** with 100% parity with `F12` in-game settings: **Play & Paths** (`F14.COM`, `F14S.EXE`, `F14.EXE`, `F14JUKE.EXE` + local PDF manuals), **Audio & Mixing** (Roland MT-32/CM-32L & SB16 voice mixers, radio ducking, warm cockpit enhance, polyphony, live test tones), **3D & Display** (render modes, borderless fullscreen, resolution presets, FOV, smart scaling), **HOTAS & Input** (live USB axis deadzones/curves, buttons, POV hats, pinky shift), **Sim Realism & DOS** (`CONFIG.F14` & `JOY.F14` editor + 240 Hz F-14 FM), and **Quick Keys** (dynamic resolution-scaling vector keyboard).
 - **Seamless Full-Suite DOS Process Chaining (`F14.COM` → `F.EXE` → `F14.EXE` / `F14S.EXE`):**
   - Full real-mode MS-DOS `INT 21h` process EXEC stack (`AX=4B00h`/`4B03h`/`4Ch`/`4Dh`/`52h`) and 16 MB EMS 4.0 (`INT 67h` incl. `AX=5000h`, `AH=51h`, `AH=53h`, `AH=57h`) so all textures, digital speech (`GAME.DGT`), and moving RIO heads load cleanly.
 - **4 Live Render Modes (`F11` cycles Classic VGA → Modern 3D → Hybrid Cockpit → VR Stereo Preview):**
@@ -40,10 +40,10 @@ A standalone C++20 native host (SDL3 + OpenGL + Dear ImGui + Munt `libmt32emu` +
 ## Quick Start (End Users)
 
 1. Install **Fleet Defender Gold** (GOG.com, Steam, or original CD-ROM).
-2. Download **`FleetDefenderGold-Native-Setup-v0.1.0.exe`** from [Releases](https://github.com/ajalberd/fleet-defender-native/releases) and run it:
+2. Download **`FleetDefenderGold-Native-Setup-v0.2.0.exe`** from [Releases](https://github.com/ajalberd/fleet-defender-native/releases) and run it:
    - Auto-detects your Fleet Defender Gold install and optional Roland CM-32L / MT-32 ROM folder.
    - Creates a **Fleet Defender Gold [Native]** Desktop shortcut and launches immediately with zero console flash.
-3. *(Optional)* Prefer portable? Extract **`FleetDefenderGold-Native-v0.1.0-portable.zip`** into your Fleet Defender Gold folder and run `f14_native.exe`.
+3. *(Optional)* Prefer portable? Extract **`FleetDefenderGold-Native-v0.2.0-portable.zip`** into your Fleet Defender Gold folder and run `f14_native.exe`.
 
 ### CLI Flags
 | Flag | Description |

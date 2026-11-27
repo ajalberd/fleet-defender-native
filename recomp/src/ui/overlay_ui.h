@@ -2,6 +2,7 @@
 
 #include "audio/audio_engine.h"
 #include "dos/dos_machine.h"
+#include "dos/f14_dos_config.h"
 #include "input/hotas_mapper.h"
 #include "net/net_udp.h"
 #include "render/modern_renderer.h"
@@ -28,7 +29,7 @@ public:
 
     void draw(const FlightTelemetry& tel);
 
-    // Draws the full-window Startup GUI Launcher before booting the DOS executable.
+    // Draws the full-window tabbed Startup GUI Launcher before booting the DOS executable.
     LauncherDecision draw_launcher(std::string& game_dir,
                                    std::string& rom_dir,
                                    bool& show_launcher_on_startup,
@@ -39,11 +40,15 @@ public:
         settings_path_ = std::move(settings_path);
     }
     void set_quit_callback(std::function<void()> cb) { quit_cb_ = std::move(cb); }
+    void set_resize_window_callback(std::function<void(int, int)> cb) { resize_window_cb_ = std::move(cb); }
     void set_show_launcher_ptr(bool* ptr) { show_launcher_ptr_ = ptr; }
+    void set_start_fullscreen_ptr(bool* ptr) { start_fullscreen_ptr_ = ptr; }
     void set_game_dir(const std::string& dir);
     void set_external_chart_path(std::string path) { external_chart_path_ = std::move(path); }
     void set_hotas_profile_path(std::string path) { hotas_path_ = std::move(path); }
     void sync_rom_dir_buf(const std::string& rom_dir);
+
+    bool save_dos_config_if_dirty();
 
     bool visible() const { return visible_; }
     void toggle() { visible_ = !visible_; }
@@ -62,18 +67,23 @@ private:
     bool show_audio_ = false;
     bool show_render_ = true;
     bool show_flight_model_ = false;
+    bool show_dos_config_ = false;
     bool show_multiplayer_ = false;
     bool show_debugger_ = false;
     bool show_quick_keys_ = false;
 
     // Launcher state
     int launcher_selected_card_ = 0;
-    bool launcher_show_keys_ = false;
     char launcher_game_buf_[512]{};
     char launcher_rom_buf_[512]{};
     bool launcher_bufs_init_ = false;
     std::string launcher_status_;
     QuickKeysState quick_keys_state_;
+
+    // Original Fleet Defender Gold DOS config store (CONFIG.F14 + JOY.F14)
+    F14DosConfigStore dos_cfg_;
+    bool dos_cfg_dirty_ = false;
+    std::string dos_cfg_status_;
 
     char rom_dir_buf_[512]{};
     char join_ip_buf_[128] = "127.0.0.1";
@@ -86,13 +96,24 @@ private:
     std::string external_chart_path_;
     std::vector<ManualEntry> manuals_;
     bool* show_launcher_ptr_ = nullptr;
+    bool* start_fullscreen_ptr_ = nullptr;
     std::function<bool()> save_settings_cb_;
     std::function<void()> quit_cb_;
+    std::function<void(int, int)> resize_window_cb_;
 
+    // Shared inner panel builders (used by BOTH Startup Launcher tabs & F12 floating windows)
+    void draw_render_contents(const FlightTelemetry* tel, bool in_launcher);
+    void draw_audio_contents(bool in_launcher, std::string* launcher_rom_dir = nullptr);
+    void draw_hotas_contents(bool in_launcher);
+    void draw_flight_model_contents(bool in_launcher);
+    void draw_dos_config_contents(bool in_launcher);
+
+    // Floating F12 window wrappers
     void draw_hotas_window();
     void draw_audio_window();
     void draw_render_vr_window(const FlightTelemetry& tel);
     void draw_flight_model_window(const FlightTelemetry& tel);
+    void draw_dos_config_window();
     void draw_multiplayer_window();
     void draw_debugger_window();
     void draw_quick_keys_window();

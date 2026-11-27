@@ -204,7 +204,7 @@ def generate_svg() -> None:
 
     # Header
     parts.append('  <text x="48" y="72" fill="#4CE5FF" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" letter-spacing="1.2">FLEET DEFENDER GOLD (F-14 TOMCAT) — QUICKSTART KEYBOARD LAYOUT</text>')
-    parts.append('  <text x="48" y="106" fill="#9BB6D1" font-family="Segoe UI, Arial, sans-serif" font-size="19">Native Host v0.1.0  •  Verified against F14.EXE  •  Modifiers: S = Shift, C = Ctrl, A = Alt  •  In-Game Interactive Scalable Map: F12 → Quick Keys</text>')
+    parts.append('  <text x="48" y="106" fill="#9BB6D1" font-family="Segoe UI, Arial, sans-serif" font-size="19">Native Host v0.2.0  •  Verified against F14.EXE  •  Modifiers: S = Shift, C = Ctrl, A = Alt  •  In-Game Interactive Scalable Map: F12 → Quick Keys</text>')
 
     # Legend strip
     lx = 48.0
@@ -292,7 +292,7 @@ def generate_png() -> None:
     f_foot  = load_font(14, bold=False)
 
     draw.text((48, 36), "FLEET DEFENDER GOLD (F-14 TOMCAT) — QUICKSTART KEYBOARD LAYOUT", font=f_title, fill=(76, 229, 255))
-    draw.text((48, 82), "Native Host v0.1.0  •  Verified against F14.EXE  •  Modifiers: S = Shift, C = Ctrl, A = Alt  •  In-Game Scalable Map: F12 → Quick Keys", font=f_sub, fill=(155, 182, 209))
+    draw.text((48, 82), "Native Host v0.2.0  •  Verified against F14.EXE  •  Modifiers: S = Shift, C = Ctrl, A = Alt  •  In-Game Scalable Map: F12 → Quick Keys", font=f_sub, fill=(155, 182, 209))
 
     # Legend
     lx, ly = 48, 118

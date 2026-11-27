@@ -11,7 +11,7 @@
   <rect width="1920" height="1080" fill="url(#bgGrad)"/>
   <rect x="20" y="20" width="1880" height="1040" rx="16" fill="none" stroke="#243B56" stroke-width="2"/>
   <text x="48" y="72" fill="#4CE5FF" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" letter-spacing="1.2">FLEET DEFENDER GOLD (F-14 TOMCAT) — QUICKSTART KEYBOARD LAYOUT</text>
-  <text x="48" y="106" fill="#9BB6D1" font-family="Segoe UI, Arial, sans-serif" font-size="19">Native Host v0.1.0  •  Verified against F14.EXE  •  Modifiers: S = Shift, C = Ctrl, A = Alt  •  In-Game Interactive Scalable Map: F12 → Quick Keys</text>
+  <text x="48" y="106" fill="#9BB6D1" font-family="Segoe UI, Arial, sans-serif" font-size="19">Native Host v0.2.0  •  Verified against F14.EXE  •  Modifiers: S = Shift, C = Ctrl, A = Alt  •  In-Game Interactive Scalable Map: F12 → Quick Keys</text>
   <rect x="48.0" y="118.0" width="20" height="18" rx="4" fill="#173B5C" stroke="#52B8FA" stroke-width="2"/>
   <text x="76.0" y="132.0" fill="#DCE9F6" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600">Flight &amp; Throttle</text>
   <rect x="265.2" y="118.0" width="20" height="18" rx="4" fill="#642023" stroke="#F46862" stroke-width="2"/>

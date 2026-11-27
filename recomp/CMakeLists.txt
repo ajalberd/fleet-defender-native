@@ -112,6 +112,7 @@ add_executable(f14_native WIN32
     src/main.cpp
     src/dos/vga.cpp
     src/dos/dos_machine.cpp
+    src/dos/f14_dos_config.cpp
     src/audio/audio_engine.cpp
     src/input/hotas_mapper.cpp
     src/net/net_udp.cpp

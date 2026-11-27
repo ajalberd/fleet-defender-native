@@ -216,6 +216,7 @@ bool load_host_settings(const std::string& path,
                         f14::F14FlightModel& flight_model,
                         f14::DosMachine& machine,
                         bool& show_launcher_on_startup,
+                        bool& start_fullscreen,
                         int& init_win_w,
                         int& init_win_h) {
     std::ifstream in(path);
@@ -230,11 +231,23 @@ bool load_host_settings(const std::string& path,
                 std::string saved_rom = a["cm32l_rom_dir"].get<std::string>();
                 if (!saved_rom.empty()) ac.cm32l_rom_dir = saved_rom;
             }
+            if (a.contains("music_backend")) ac.music_backend = static_cast<f14::MusicBackend>(std::clamp(a["music_backend"].get<int>(), 0, 2));
+            if (a.contains("enable_sb16_sfx")) ac.enable_sb16_sfx = a["enable_sb16_sfx"].get<bool>();
             if (a.contains("master_volume")) ac.master_volume = std::clamp(a["master_volume"].get<float>(), 0.0f, 1.5f);
             if (a.contains("mt32_volume")) ac.mt32_volume = std::clamp(a["mt32_volume"].get<float>(), 0.0f, 1.5f);
             if (a.contains("sb16_sfx_volume")) ac.sb16_sfx_volume = std::clamp(a["sb16_sfx_volume"].get<float>(), 0.0f, 1.5f);
             if (a.contains("engine_bus_volume")) ac.engine_bus_volume = std::clamp(a["engine_bus_volume"].get<float>(), 0.0f, 1.5f);
             if (a.contains("weapons_bus_volume")) ac.weapons_bus_volume = std::clamp(a["weapons_bus_volume"].get<float>(), 0.0f, 1.5f);
+            if (a.contains("avionics_bus_volume")) ac.avionics_bus_volume = std::clamp(a["avionics_bus_volume"].get<float>(), 0.0f, 1.5f);
+            if (a.contains("wind_volume")) ac.wind_volume = std::clamp(a["wind_volume"].get<float>(), 0.0f, 1.5f);
+            if (a.contains("opl3_volume")) ac.opl3_volume = std::clamp(a["opl3_volume"].get<float>(), 0.0f, 1.5f);
+            if (a.contains("gun_sfx_volume")) ac.gun_sfx_volume = std::clamp(a["gun_sfx_volume"].get<float>(), 0.0f, 1.5f);
+            if (a.contains("audio_radio_ducking")) ac.audio_radio_ducking = a["audio_radio_ducking"].get<bool>();
+            if (a.contains("audio_warm_enhance")) ac.audio_warm_enhance = a["audio_warm_enhance"].get<bool>();
+            if (a.contains("spatial_3d_audio")) ac.spatial_3d_audio = a["spatial_3d_audio"].get<bool>();
+            if (a.contains("mt32_max_partials")) ac.mt32_max_partials = std::clamp(a["mt32_max_partials"].get<int>(), 32, 256);
+            if (a.contains("nice_partial_mixing")) ac.nice_partial_mixing = a["nice_partial_mixing"].get<bool>();
+            if (a.contains("polyphonic_gun_sfx")) ac.polyphonic_gun_sfx = a["polyphonic_gun_sfx"].get<bool>();
         }
         if (j.contains("render") && j["render"].is_object()) {
             const auto& r = j["render"];
@@ -276,6 +289,7 @@ bool load_host_settings(const std::string& path,
                 if (!resolved.empty()) game_dir = resolved;
             }
             if (h.contains("show_launcher_on_startup")) show_launcher_on_startup = h["show_launcher_on_startup"].get<bool>();
+            if (h.contains("start_fullscreen")) start_fullscreen = h["start_fullscreen"].get<bool>();
             if (h.contains("skip_intro")) machine.set_skip_intro(h["skip_intro"].get<bool>());
             if (h.contains("flight_input_mode")) {
                 int im = std::clamp(h["flight_input_mode"].get<int>(), 0, 2);
@@ -297,18 +311,31 @@ bool save_host_settings(const std::string& path,
                         const f14::F14FlightModel& flight_model,
                         const f14::DosMachine& machine,
                         bool show_launcher_on_startup,
+                        bool start_fullscreen,
                         int win_w,
                         int win_h) {
     try {
         nlohmann::json j;
         const auto& ac = audio.config();
         j["audio"] = {
+            {"music_backend", static_cast<int>(ac.music_backend)},
+            {"enable_sb16_sfx", ac.enable_sb16_sfx},
             {"cm32l_rom_dir", ac.cm32l_rom_dir},
             {"master_volume", ac.master_volume},
             {"mt32_volume", ac.mt32_volume},
             {"sb16_sfx_volume", ac.sb16_sfx_volume},
             {"engine_bus_volume", ac.engine_bus_volume},
             {"weapons_bus_volume", ac.weapons_bus_volume},
+            {"avionics_bus_volume", ac.avionics_bus_volume},
+            {"wind_volume", ac.wind_volume},
+            {"opl3_volume", ac.opl3_volume},
+            {"gun_sfx_volume", ac.gun_sfx_volume},
+            {"audio_radio_ducking", ac.audio_radio_ducking},
+            {"audio_warm_enhance", ac.audio_warm_enhance},
+            {"spatial_3d_audio", ac.spatial_3d_audio},
+            {"mt32_max_partials", ac.mt32_max_partials},
+            {"nice_partial_mixing", ac.nice_partial_mixing},
+            {"polyphonic_gun_sfx", ac.polyphonic_gun_sfx},
         };
         const auto& vr = renderer.vr_config();
         j["render"] = {
@@ -336,6 +363,7 @@ bool save_host_settings(const std::string& path,
         j["host"] = {
             {"game_dir", game_dir},
             {"show_launcher_on_startup", show_launcher_on_startup},
+            {"start_fullscreen", start_fullscreen},
             {"skip_intro", machine.skip_intro()},
             {"flight_input_mode", static_cast<int>(machine.flight_input_mode())},
             {"window_w", win_w},
@@ -537,10 +565,11 @@ int main(int argc, char** argv) {
     f14::F14FlightModel flight_model;
 
     bool show_launcher_on_startup = true;
+    bool start_fullscreen = false;
     int init_win_w = 1280, init_win_h = 720;
     load_host_settings(settings_path, explicit_game_dir, explicit_rom_dir, game_dir,
                        audio, renderer, flight_model, machine, show_launcher_on_startup,
-                       init_win_w, init_win_h);
+                       start_fullscreen, init_win_w, init_win_h);
     rom_dir = audio.config().cm32l_rom_dir;
 
     SDL_Window* window = SDL_CreateWindow("Fleet Defender Gold — Native Host (F11 Render | F12 Settings)",
@@ -561,21 +590,38 @@ int main(int argc, char** argv) {
     ImGui_ImplSDL3_InitForOpenGL(window, gl_ctx);
     ImGui_ImplOpenGL3_Init("#version 120");
 
+    // Initialize Audio & Multi-HOTAS BEFORE the Launcher so live audio previews & USB HOTAS binding work in Launcher!
+    audio.init();
+    hotas.init();
+    if (!hotas.load_profile(hotas_path)) {
+        hotas.load_profile("f14_hotas.json");
+    }
+
     f14::OverlayUI ui(machine, audio, hotas, net, renderer, flight_model);
     std::string chart_path = find_external_chart_path(cfg_dir, game_dir);
     ui.set_external_chart_path(chart_path);
     ui.set_show_launcher_ptr(&show_launcher_on_startup);
+    ui.set_start_fullscreen_ptr(&start_fullscreen);
+    ui.set_hotas_profile_path(hotas_path);
     ui.set_game_dir(game_dir);
     ui.sync_rom_dir_buf(rom_dir);
 
     bool running = true;
+    bool is_fullscreen = false;
     ui.set_quit_callback([&]() { running = false; });
+    ui.set_resize_window_callback([&](int w, int h) {
+        if (is_fullscreen) {
+            is_fullscreen = false;
+            SDL_SetWindowFullscreen(window, false);
+        }
+        SDL_SetWindowSize(window, w, h);
+    });
 
     auto do_save_settings = [&]() {
         int cur_w = init_win_w, cur_h = init_win_h;
         SDL_GetWindowSize(window, &cur_w, &cur_h);
         return save_host_settings(settings_path, game_dir, audio, renderer, flight_model, machine,
-                                  show_launcher_on_startup, cur_w, cur_h);
+                                  show_launcher_on_startup, start_fullscreen, cur_w, cur_h);
     };
     ui.set_save_settings_callback(do_save_settings, settings_path);
 
@@ -589,12 +635,17 @@ int main(int argc, char** argv) {
             SDL_Event ev;
             while (SDL_PollEvent(&ev)) {
                 ImGui_ImplSDL3_ProcessEvent(&ev);
+                hotas.handle_sdl_event(ev);
                 if (ev.type == SDL_EVENT_QUIT || ev.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
                     running = false;
                     in_launcher = false;
                 }
             }
             if (!running) break;
+
+            // Keep live HOTAS axis/button capture & Audio Test Tones active inside Launcher
+            hotas.update([](uint8_t, uint8_t, bool) {});
+            audio.update();
 
             int lw = 1280, lh = 720;
             SDL_GetWindowSize(window, &lw, &lh);
@@ -639,13 +690,10 @@ int main(int argc, char** argv) {
     }
 
     if (running) {
-        audio.init();
-        hotas.init();
-        ui.set_hotas_profile_path(hotas_path);
-        if (!hotas.load_profile(hotas_path)) {
-            hotas.load_profile("f14_hotas.json");
+        if (start_fullscreen && !is_fullscreen) {
+            is_fullscreen = true;
+            SDL_SetWindowFullscreen(window, true);
         }
-
         if (!machine.load_exe(game_dir, exe_name)) {
             std::fprintf(stderr, "Failed to load %s from %s\n", exe_name.c_str(), game_dir.c_str());
             running = false;
@@ -673,7 +721,6 @@ int main(int argc, char** argv) {
     bool rmb_freelook = false;
     bool prev_in_flight = false;
     bool cockpit_harvested = false;
-    bool is_fullscreen = false;
     bool cursor_hidden = false;
     std::string last_loaded_wld;
     auto last_t = std::chrono::steady_clock::now();

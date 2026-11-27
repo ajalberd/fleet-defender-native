@@ -313,6 +313,35 @@ void AudioEngine::trigger_missile_launch_sfx() {
     spawn_direct_oneshot(42, 60, 1.15f, pan, 260);
 }
 
+void AudioEngine::play_test_tone(bool test_sb16_voice) {
+    if (test_sb16_voice) {
+        // Synthesize a clean two-tone radio squelch / cockpit chime into the SB16 PCM bus
+        if (!config_.enable_sb16_sfx) return;
+        std::lock_guard<std::mutex> lock(sb_pcm_mutex_);
+        constexpr int kSamples = 44100 / 3; // ~333 ms
+        sb_pcm_queue_.reserve(sb_pcm_queue_.size() + kSamples);
+        for (int i = 0; i < kSamples; ++i) {
+            float t = static_cast<float>(i) / 44100.0f;
+            float env = std::min(1.0f, t / 0.015f) * std::exp(-t * 7.0f);
+            float f = (t < 0.14f) ? 880.0f : 1174.66f; // A5 -> D6 cockpit attention chime
+            sb_pcm_queue_.push_back(std::sin(2.0f * 3.14159265f * f * t) * 0.45f * env);
+        }
+        return;
+    }
+
+    // Play a quick brass/synth triad on live Roland CM-32L / MT-32
+    std::lock_guard<std::mutex> lock(mt32_mutex_);
+    if (mt32_ready_ && mt32_synth_ && config_.music_backend == MusicBackend::CM32L) {
+        const uint8_t ch = 1; // MIDI Ch 2 (part 1)
+        mt32_synth_->playMsgNow(static_cast<uint32_t>(0xC0u | ch) | (50u << 8)); // Synth Brass / Strings
+        const uint8_t notes[3] = {57, 64, 69}; // A3 - E4 - A4 power fifth
+        for (uint8_t n : notes) {
+            mt32_synth_->playMsgNow(static_cast<uint32_t>(0x90u | ch) | (static_cast<uint32_t>(n) << 8) | (96u << 16));
+        }
+        mt32_test_note_blocks_ = 16; // ~370 ms at 1024-frame blocks (44.1 kHz)
+    }
+}
+
 void AudioEngine::set_in_flight(bool in_flight) {
     bool prev = in_flight_.exchange(in_flight, std::memory_order_relaxed);
     if (prev == in_flight) return;
@@ -1340,45 +1369,8 @@ void AudioEngine::update() {
         constexpr int kFrames = 1024;
         float mix[kFrames * 2]{};
 
-        if (!fast_boot_mute_ && config_.music_backend == MusicBackend::CM32L) {
-            std::lock_guard<std::mutex> lock(mt32_mutex_);
-            if (mt32_ready_ && mt32_synth_) {
-                bool proxy_in_flight = config_.use_cm32l_sample_proxy && in_flight_.load(std::memory_order_relaxed);
-                if (proxy_in_flight && !prev_proxy_in_flight_) {
-                    // Cleanly silence Ch 2..8 on live MT-32 when switching into 64-Voice Sample Proxy mid-flight
-                    for (uint8_t ch = 1; ch <= 7; ++ch) {
-                        mt32_synth_->playMsgNow(static_cast<uint32_t>(0xB0u | ch) | (120u << 8));
-                    }
-                }
-                prev_proxy_in_flight_ = proxy_in_flight;
-                mt32_synth_->setNicePartialMixingEnabled(config_.nice_partial_mixing);
-                // libmt32emu renders native 32000Hz; resample linearly to 44100Hz
-                constexpr int kMtFrames = 744; // ~1024 * 32000 / 44100
-                float mt_buf[kMtFrames * 2]{};
-                mt32_synth_->render(mt_buf, kMtFrames);
-                // Count live active partials for telemetry
-                std::vector<MT32Emu::PartialState> pstates(mt32_partial_limit_);
-                mt32_synth_->getPartialStates(pstates.data());
-                uint32_t act = 0;
-                for (auto ps : pstates) {
-                    if (ps != MT32Emu::PartialState_INACTIVE) ++act;
-                }
-                mt32_active_partials_ = act;
-
-                float gain = config_.master_volume * config_.mt32_volume;
-                for (int i = 0; i < kFrames; ++i) {
-                    float src_pos = static_cast<float>(i) * (static_cast<float>(kMtFrames - 1) / static_cast<float>(kFrames - 1));
-                    int idx = static_cast<int>(src_pos);
-                    float frac = src_pos - static_cast<float>(idx);
-                    int idx2 = std::min(idx + 1, kMtFrames - 1);
-                    mix[i * 2 + 0] += (mt_buf[idx * 2 + 0] * (1.0f - frac) + mt_buf[idx2 * 2 + 0] * frac) * gain;
-                    mix[i * 2 + 1] += (mt_buf[idx * 2 + 1] * (1.0f - frac) + mt_buf[idx2 * 2 + 1] * frac) * gain;
-                }
-            }
-        }
-
         // Mix Sound Blaster 16 Digital SFX / Direct DAC Voice Comms FIRST so we know whether radio voice is active
-        // (enables clean subtle engine ducking while AWACS / Wingman speaks!)
+        // (enables clean subtle engine/MT-32 ducking while RIO / AWACS / LSO speaks!)
         bool sb_voice_active = false;
         if (!fast_boot_mute_ && config_.enable_sb16_sfx) {
             std::lock_guard<std::mutex> lock(sb_pcm_mutex_);
@@ -1403,6 +1395,60 @@ void AudioEngine::update() {
         // Smooth radio ducking envelope (~3.5 dB dip = 0.66x while SB16 radio comms speak)
         float duck_target = (config_.audio_radio_ducking && sb_voice_active) ? 0.66f : 1.0f;
         radio_duck_env_ += (duck_target - radio_duck_env_) * (sb_voice_active ? 0.25f : 0.06f);
+
+        if (!fast_boot_mute_ && config_.music_backend == MusicBackend::CM32L) {
+            std::lock_guard<std::mutex> lock(mt32_mutex_);
+            if (mt32_ready_ && mt32_synth_) {
+                bool proxy_in_flight = config_.use_cm32l_sample_proxy && in_flight_.load(std::memory_order_relaxed);
+                if (proxy_in_flight && !prev_proxy_in_flight_) {
+                    for (uint8_t ch = 1; ch <= 7; ++ch) {
+                        mt32_synth_->playMsgNow(static_cast<uint32_t>(0xB0u | ch) | (120u << 8));
+                    }
+                }
+                prev_proxy_in_flight_ = proxy_in_flight;
+                if (mt32_test_note_blocks_ > 0) {
+                    if (--mt32_test_note_blocks_ == 0) {
+                        const uint8_t ch = 1;
+                        const uint8_t notes[3] = {57, 64, 69};
+                        for (uint8_t n : notes) {
+                            mt32_synth_->playMsgNow(static_cast<uint32_t>(0x80u | ch) | (static_cast<uint32_t>(n) << 8));
+                        }
+                    }
+                }
+                mt32_synth_->setNicePartialMixingEnabled(config_.nice_partial_mixing);
+                constexpr int kMtFrames = 744; // ~1024 * 32000 / 44100
+                float mt_buf[kMtFrames * 2]{};
+                mt32_synth_->render(mt_buf, kMtFrames);
+                std::vector<MT32Emu::PartialState> pstates(mt32_partial_limit_);
+                mt32_synth_->getPartialStates(pstates.data());
+                uint32_t act = 0;
+                for (auto ps : pstates) {
+                    if (ps != MT32Emu::PartialState_INACTIVE) ++act;
+                }
+                mt32_active_partials_ = act;
+
+                // Apply Radio Ducking & optional Warm Cockpit Low-End Shelf to live CM-32L output too!
+                float live_duck = config_.audio_radio_ducking ? radio_duck_env_ : 1.0f;
+                float gain = config_.master_volume * config_.mt32_volume * live_duck;
+                bool warm_live = config_.audio_warm_enhance && !proxy_in_flight;
+                for (int i = 0; i < kFrames; ++i) {
+                    float src_pos = static_cast<float>(i) * (static_cast<float>(kMtFrames - 1) / static_cast<float>(kFrames - 1));
+                    int idx = static_cast<int>(src_pos);
+                    float frac = src_pos - static_cast<float>(idx);
+                    int idx2 = std::min(idx + 1, kMtFrames - 1);
+                    float ml = (mt_buf[idx * 2 + 0] * (1.0f - frac) + mt_buf[idx2 * 2 + 0] * frac) * gain;
+                    float mr = (mt_buf[idx * 2 + 1] * (1.0f - frac) + mt_buf[idx2 * 2 + 1] * frac) * gain;
+                    if (warm_live) {
+                        warm_lp_l_ += 0.026f * (ml - warm_lp_l_);
+                        warm_lp_r_ += 0.026f * (mr - warm_lp_r_);
+                        ml += warm_lp_l_ * 0.24f;
+                        mr += warm_lp_r_ * 0.24f;
+                    }
+                    mix[i * 2 + 0] += ml;
+                    mix[i * 2 + 1] += mr;
+                }
+            }
+        }
 
         // Mix 64-Voice Pre-Baked CM-32L Sample Proxy + Layer 1 Telemetry-Driven Engine/AB/Wind/3D Doppler!
         if (!fast_boot_mute_ && config_.music_backend == MusicBackend::CM32L && mt32_ready_) {

@@ -122,6 +122,8 @@ public:
     void trigger_flare_sfx();
     void trigger_missile_launch_sfx();
     void prebake_core_sfx();
+    // Play short preview sound on Roland MT-32 / SB16 so user can test mixer balance in Launcher/F12
+    void play_test_tone(bool test_sb16_voice = false);
 
     // Non-blocking M61A1 Vulcan cannon trigger (driven from live cockpit gun input when cannon is selected)
     void set_gun_firing(bool active) { gun_firing_.store(active, std::memory_order_relaxed); }
@@ -264,6 +266,7 @@ private:
     uint64_t sb_dac_rx_ = 0;
     uint32_t mt32_partial_limit_ = 32;
     uint32_t mt32_active_partials_ = 0;
+    int mt32_test_note_blocks_ = 0;
     bool fast_boot_mute_ = false;
     bool trace_audio_ = false;
 
